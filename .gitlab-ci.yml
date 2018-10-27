@@ -1,0 +1,278 @@
+stages:
+  - build
+  - test
+  - push
+  - clean
+  - release
+
+variables:
+  DOCKER_DRIVER: overlay2
+  PYTHONDONTWRITEBYTECODE: 1
+  POSTGRES_DATABASE_URL: postgres://mcod:mcod@mcod-db:5432/mcod
+  POSTGRES_PASSWORD: mcod
+  POSTGRES_USER: mcod
+  POSTGRES_DB: mcod
+  POSTGRES_HOST: mcod-db
+  POSTGRES_PORT: 5432
+  POSTGRES_HOST_TYPE: docker
+  REDIS_URL: redis://mcod-redis:6379
+  ELASTICSEARCH_HOSTS: mcod-elasticsearch-1:9200,mcod-elasticsearch-2:9200
+  RABBITMQ_HOST: mcod-rabbitmq:5672
+  DJANGO_WSGI_HOST: 0.0.0.0
+  DJANGO_WSGI_PORT: 8001
+  DJANGO_SETTINGS_MODULE: mcod.settings.test
+  API_WSGI_HOST: 0.0.0.0
+  API_WSGI_PORT: 8000
+  REGISTRY_PATH: registry.dane.gov.pl/mcod/backend
+  PIP_DEFAULT_TIMEOUT: 1800
+  EMAIL_HOST: example.com
+  EMAIL_PORT: 25
+  EMAIL_USE_TLS: 0
+  EMAIL_HOST_USER: test@example.com
+  EMAIL_HOST_PASSWORD: password
+
+
+before_script:
+  - chmod 755 docker/delete-container.sh
+  - find . -name "*.pyc" -delete
+  - printenv | grep POSTGRES_ > .env
+  - printenv | grep REDIS_ >> .env
+  - printenv | grep RABBITMQ_ >> .env
+  - printenv | grep ELASTICSEARCH_ >> .env
+  - printenv | grep API_ >> .env
+  - printenv | grep DJANGO_ >> .env
+  - printenv | grep EMAIL_ >> .env
+
+
+feat-build:
+  variables:
+    REDIS_URL: redis://redis-$CI_COMMIT_REF_SLUG:6379
+    ELASTICSEARCH_HOSTS: elasticsearch-$CI_COMMIT_REF_SLUG:9201
+    RABBITMQ_HOST: rabbitmq-$CI_COMMIT_REF_SLUG:5672
+    POSTGRES_DATABASE_URL: postgres://mcod:mcod@db-$CI_COMMIT_REF_SLUG:5432/mcod
+  stage: build
+  script:
+    - docker/delete-container.sh backend-$CI_COMMIT_REF_SLUG
+    - docker/delete-container.sh db-$CI_COMMIT_REF_SLUG
+    - docker/delete-container.sh elasticsearch-$CI_COMMIT_REF_SLUG
+    - docker/delete-container.sh redis-$CI_COMMIT_REF_SLUG
+    - docker/delete-container.sh rabbitmq-$CI_COMMIT_REF_SLUG
+    - docker build -f docker/elasticsearch/Dockerfile -t $REGISTRY_PATH/elasticsearch:6.2.4 .
+    - docker build -f docker/postgres/Dockerfile -t $REGISTRY_PATH/db:10.4 .
+    - docker build --build-arg REQ_FILE=requirements-common.txt -f docker/api/Dockerfile -t $REGISTRY_PATH/backend:$CI_COMMIT_REF_SLUG .
+  except:
+    - tags
+    - devel
+    - master
+  tags:
+    - feature
+
+feat-test:
+  variables:
+    REDIS_URL: redis://redis-$CI_COMMIT_REF_SLUG:6379
+    ELASTICSEARCH_HOSTS: elasticsearch-$CI_COMMIT_REF_SLUG:9200
+    RABBITMQ_HOST: rabbitmq-$CI_COMMIT_REF_SLUG:5672
+    POSTGRES_DATABASE_URL: postgres://mcod:mcod@db-$CI_COMMIT_REF_SLUG:5432/mcod
+  stage: test
+  script:
+    - docker run -e "ES_JAVA_OPTS=-Xms512m -Xmx512m" -e "discovery.type=single-node" -e "xpack.security.enabled=false" -d --network mcod-net --name elasticsearch-$CI_COMMIT_REF_SLUG $REGISTRY_PATH/elasticsearch:6.2.4
+    - docker run --env-file=.env -d --network mcod-net --name redis-$CI_COMMIT_REF_SLUG redis:latest
+    - docker run --env-file=.env -d --network mcod-net --name rabbitmq-$CI_COMMIT_REF_SLUG rabbitmq:3.7
+    - docker run --env-file=.env -d --network mcod-net --name db-$CI_COMMIT_REF_SLUG $REGISTRY_PATH/db:10.4
+    - docker run --env-file=.env --network mcod-net --name backend-$CI_COMMIT_REF_SLUG $REGISTRY_PATH/backend:$CI_COMMIT_REF_SLUG run-tests
+  except:
+    - tags
+    - devel
+    - master
+  tags:
+    - feature
+
+feat-clean:
+  variables:
+    REDIS_URL: redis://redis-$CI_COMMIT_REF_SLUG:6379
+    ELASTICSEARCH_HOSTS: elasticsearch-$CI_COMMIT_REF_SLUG:9200
+    RABBITMQ_HOST: rabbitmq-$CI_COMMIT_REF_SLUG:5672
+    POSTGRES_DATABASE_URL: postgres://mcod:mcod@db-$CI_COMMIT_REF_SLUG:5432/mcod
+  stage: clean
+  allow_failure: true
+  when: always
+  script:
+    - docker/delete-container.sh backend-$CI_COMMIT_REF_SLUG
+    - docker/delete-container.sh db-$CI_COMMIT_REF_SLUG
+    - docker/delete-container.sh elasticsearch-$CI_COMMIT_REF_SLUG
+    - docker/delete-container.sh redis-$CI_COMMIT_REF_SLUG
+    - docker/delete-container.sh rabbitmq-$CI_COMMIT_REF_SLUG
+    - docker images --no-trunc --format '{{.ID}} {{.Tag}}' | grep $CI_COMMIT_REF_SLUG | awk '{ print $1 }' | xargs --no-run-if-empty docker rmi -f || true
+  except:
+    - master
+    - devel
+    - tags
+  tags:
+    - feature
+
+
+devel-build:
+  variables:
+    REDIS_URL: redis://mcod-redis:6379
+    ELASTICSEARCH_HOSTS: mcod-elasticsearch-1:9200
+    RABBITMQ_HOST: mcod-rabbitmq:5672
+  stage: build
+  script:
+    - docker/delete-container.sh mcod-backend
+    - docker/delete-container.sh mcod-db
+    - docker/delete-container.sh mcod-elasticsearch-1
+    - docker/delete-container.sh mcod-redis
+    - docker/delete-container.sh mcod-rabbitmq
+    - docker build -f docker/elasticsearch/Dockerfile -t $REGISTRY_PATH/elasticsearch:6.2.4 .
+    - docker build -f docker/postgres/Dockerfile -t $REGISTRY_PATH/db:10.4 .
+    - docker build --build-arg REQ_FILE=requirements-common.txt -f docker/api/Dockerfile -t $REGISTRY_PATH/backend:$CI_COMMIT_REF_SLUG .
+  only:
+    - devel
+  tags:
+    - devel
+
+devel-test:
+  stage: test
+  script:
+    - docker run -e "ES_JAVA_OPTS=-Xms512m -Xmx512m" -e "discovery.type=single-node" -e "xpack.security.enabled=false" -d --network mcod-net --name mcod-elasticsearch-1 $REGISTRY_PATH/elasticsearch:6.2.4
+    - docker run --env-file=.env -d --network mcod-net --name mcod-redis redis:latest
+    - docker run --env-file=.env -d --network mcod-net --name mcod-rabbitmq rabbitmq:3.7
+    - docker run --env-file=.env -d --network mcod-net --name mcod-db $REGISTRY_PATH/db:10.4
+    - docker run --env-file=.env --network mcod-net --name mcod-backend $REGISTRY_PATH/backend:$CI_COMMIT_REF_SLUG run-tests
+  only:
+    - devel
+  tags:
+    - devel
+
+devel-push:
+  stage: push
+  script:
+    - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN registry.dane.gov.pl
+    - docker push $REGISTRY_PATH/elasticsearch:6.2.4
+    - docker push $REGISTRY_PATH/db:10.4
+    - docker push $REGISTRY_PATH/backend:$CI_COMMIT_REF_SLUG
+  only:
+    - devel
+  tags:
+    - devel
+
+
+devel-clean:
+  stage: clean
+  script:
+    - docker/delete-container.sh mcod-backend
+    - docker/delete-container.sh mcod-db
+    - docker/delete-container.sh mcod-elasticsearch-1
+    - docker/delete-container.sh mcod-redis
+    - docker/delete-container.sh mcod-rabbitmq
+  only:
+    - devel
+  when: always
+  tags:
+    - devel
+
+
+master-build:
+  variables:
+    REDIS_URL: redis://mcod-redis:6379
+    ELASTICSEARCH_HOSTS: mcod-elasticsearch-master-1:9200
+    RABBITMQ_HOST: mcod-rabbitmq:5672
+  stage: build
+  script:
+    - docker/delete-container.sh mcod-backend
+    - docker/delete-container.sh mcod-db
+    - docker/delete-container.sh mcod-elasticsearch-master-1
+    - docker/delete-container.sh mcod-redis
+    - docker/delete-container.sh mcod-rabbitmq
+    - docker build -f docker/elasticsearch/Dockerfile -t $REGISTRY_PATH/elasticsearch:6.2.4 .
+    - docker build -f docker/postgres/Dockerfile -t $REGISTRY_PATH/db:10.4 .
+    - docker build --build-arg REQ_FILE=requirements-common.txt -f docker/api/Dockerfile -t $REGISTRY_PATH/backend:$CI_COMMIT_REF_SLUG .
+  only:
+    - master
+  tags:
+    - master
+
+
+master-test:
+  stage: test
+  variables:
+    REDIS_URL: redis://mcod-redis:6379
+    ELASTICSEARCH_HOSTS: mcod-elasticsearch-master-1:9200
+    RABBITMQ_HOST: mcod-rabbitmq:5672
+  script:
+    - docker run -e "ES_JAVA_OPTS=-Xms512m -Xmx512m" -e "discovery.type=single-node" -e "xpack.security.enabled=false" -d --network mcod-net --name mcod-elasticsearch-master-1 $REGISTRY_PATH/elasticsearch:6.2.4
+    - docker run --env-file=.env -d --network mcod-net --name mcod-redis redis:latest
+    - docker run --env-file=.env -d --network mcod-net --name mcod-rabbitmq rabbitmq:3.7
+    - docker run --env-file=.env -d --network mcod-net --name mcod-db $REGISTRY_PATH/db:10.4
+    - docker run --env-file=.env --network mcod-net --name mcod-backend $REGISTRY_PATH/backend:$CI_COMMIT_REF_SLUG run-tests
+  only:
+    - master
+  tags:
+    - master
+
+master-push:
+  stage: push
+  script:
+    - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN registry.dane.gov.pl
+    - docker push $REGISTRY_PATH/elasticsearch:6.2.4
+    - docker push $REGISTRY_PATH/db:10.4
+    - docker push $REGISTRY_PATH/backend:$CI_COMMIT_REF_SLUG
+  only:
+    - master
+  tags:
+    - master
+
+master-clean:
+  stage: clean
+  script:
+    - docker/delete-container.sh mcod-backend
+    - docker/delete-container.sh mcod-db
+    - docker/delete-container.sh mcod-elasticsearch-master-1
+    - docker/delete-container.sh mcod-redis
+    - docker/delete-container.sh mcod-rabbitmq
+  only:
+    - master
+    - tags
+  when: always
+  tags:
+    - master
+
+release-rc:
+  before_script:
+    - export API_VERSION=$(python -c "from mcod import version;print(version)")
+  stage: release
+  script:
+    - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN registry.dane.gov.pl
+    - docker tag $REGISTRY_PATH/backend:master $REGISTRY_PATH/backend:master-rc-$API_VERSION
+    - docker tag $REGISTRY_PATH/backend:master $REGISTRY_PATH/backend:master-rc-latest
+    - docker push $REGISTRY_PATH/backend:master-rc-$API_VERSION
+    - docker push $REGISTRY_PATH/backend:master-rc-latest
+  except:
+    - devel
+  only:
+    - master
+    - tags
+  when: manual
+  tags:
+    - master
+
+release-prod:
+  before_script:
+    - export API_VERSION=$(python -c "from mcod import version;print(version)")
+    - export GIT_VERSION=$(git tag | tail -1)
+  stage: release
+  script:
+    - "[[ $API_VERSION != $GIT_VERSION ]] && echo 'Version mismatch' && exit 1"
+    - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN registry.dane.gov.pl
+    - docker tag $REGISTRY_PATH/backend:master-rc-$API_VERSION $REGISTRY_PATH/backend:master-prod-$API_VERSION
+    - docker tag $REGISTRY_PATH/backend:master-rc-$API_VERSION $REGISTRY_PATH/backend:master-prod-latest
+    - docker push $REGISTRY_PATH/backend:master-prod-$API_VERSION
+    - docker push $REGISTRY_PATH/backend:master-prod-latest
+  except:
+    - devel
+  only:
+    - master
+    - tags
+  when: manual
+  tags:
+    - master

@@ -1,0 +1,3 @@
+{% load i18n %}
+{% blocktrans %}Do zbioru{% endblocktrans %} {{ title }} (wersja {{ version }}) [{{ url }}] {% blocktrans %}została zgłoszona uwaga:{% endblocktrans %}
+{{ comment }}

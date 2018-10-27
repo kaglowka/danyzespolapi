@@ -1,0 +1,7 @@
+- name: install rabbitmq server
+  yum: name=rabbitmq-server state=installed update_cache=yes
+  become: true
+
+- name: enable and start rabbitmq server
+  service: name=rabbitmq-server enabled=yes state=started
+  become: true

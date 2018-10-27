@@ -1,0 +1,104 @@
+- name: install required packages
+  yum:
+    name: [
+      '@Development Tools',
+      'sudo',
+      'vim',
+      'mc',
+      'python',
+      'python-devel',
+      'postgresql10-devel',
+      'python-psycopg2',
+      'libxslt-devel',
+      'libxml2-devel',
+      'sqlite-devel',
+      'libffi-devel',
+      'libjpeg-turbo-devel',
+      'zlib-devel',
+      'openssl-devel'
+    ]
+  become: true
+
+- name: check if pip is already installed
+  command: pip --version
+  ignore_errors: true
+  changed_when: false
+  check_mode: no
+  register: pip_installed
+  become: true
+
+- name: download get_pip.py script
+  when: pip_installed.rc != 0
+  get_url:
+    url: https://bootstrap.pypa.io/get-pip.py
+    dest: /tmp/get-pip.py
+  become: true
+
+- name: install pip
+  when: pip_installed.rc != 0
+  command: python /tmp/get-pip.py
+  become: true
+
+- name: delete get-pip.py
+  file: state=absent path=/tmp/get-pip.py
+  when: pip_installed.rc != 0
+  become: true
+
+- name: install virtualenv
+  pip:
+    name: [
+      'virtualenv',
+      'virtualenvwrapper'
+    ]
+  become: true
+
+- name: check python version
+  command: /usr/local/bin/python3 --version
+  register: python
+  ignore_errors: true
+
+- name: download python 3.6.4
+  when: (python is failed) or (python.stdout != "Python 3.6.4")
+  become: true
+  get_url:
+    url: https://www.python.org/ftp/python/3.6.4/Python-3.6.4.tgz
+    dest: "/tmp/Python-3.6.4.tgz"
+
+- name: extract python archive
+  when: (python is failed) or (python.stdout != "Python 3.6.4")
+  unarchive:
+    src: "/tmp/Python-3.6.4.tgz"
+    dest: "/tmp"
+    remote_src: yes
+  become: true
+
+- name: prepare python source code
+  when: (python is failed) or (python.stdout != "Python 3.6.4")
+  become: true
+  command: "./configure --prefix=/usr/local chdir=/tmp/Python-3.6.4"
+
+- name: compile python
+  when: (python is failed) or (python.stdout != "Python 3.6.4")
+  become: true
+  command: "make chdir=/tmp/Python-3.6.4"
+
+- name: install python
+  when: (python is failed) or (python.stdout != "Python 3.6.4")
+  become: true
+  command: "make install chdir=/tmp/Python-3.6.4"
+
+- name: add virtualenvwrapper.sh to .bashrc
+  lineinfile:
+    dest: ~/.bashrc
+    line: 'source /usr/bin/virtualenvwrapper.sh'
+  become: no
+
+- name: launch virtualenvwrapper.sh
+  shell: '/usr/bin/virtualenvwrapper.sh'
+  become: no
+
+- name: create ~/.virtualenvs
+  file:
+    dest: ~/.virtualenvs
+    state: directory
+  become: no

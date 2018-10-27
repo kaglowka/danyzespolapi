@@ -1,0 +1,7 @@
+## Group Aplikacje
+
+Aplikacja to .... bla bla bla,
+można używać tagów z django (jak trans)
+
+{% include "./applications_view.apibp" %}
+

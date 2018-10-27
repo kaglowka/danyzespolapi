@@ -1,0 +1,4 @@
+{% load i18n %}
+{% blocktrans %}adresaci: {% endblocktrans %} {{ emails }}
+{% blocktrans %}Do zbioru{% endblocktrans %} {{ title }} (wersja {{ version }}) [{{ url }}] {% blocktrans %}została zgłoszona uwaga:{% endblocktrans %}
+{{ comment }}

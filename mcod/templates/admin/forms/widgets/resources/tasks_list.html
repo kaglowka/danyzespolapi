@@ -1,0 +1,23 @@
+{% load i18n %}
+<table id="change-history" class="table table-bordered table-striped ">
+    <thead>
+    <tr>
+        <th scope="col">UUID</th>
+        <th scope="col">{% trans 'Date done' %}</th>
+        <th scope="col">{% trans 'Status' %}</th>
+        <th scope="col"></th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for task in widget.value %}
+        <tr>
+            <td>{{ task.id }}</td>
+            <td>{{ task.date_done|date:"d.m.Y H:i" }}</td>
+            <td>{{ task.status }} </td>
+            <td>{% if task.error %}<a href="#">{% trans "Details" %}</a>{% endif %}</td>
+        </tr>
+
+    {% endfor %}
+    </tbody>
+
+</table>

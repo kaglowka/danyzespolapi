@@ -1,0 +1,8 @@
+{% load i18n %}
+{% blocktrans %}Zgłoszono propozycję aplikacji{% endblocktrans %}:
+{% blocktrans %}E-mail zgłaszającego:{% endblocktrans %} {{ applicant_email }}
+{% blocktrans %}Tytuł:{% endblocktrans %} {{ title }}
+{% blocktrans %}URL:{% endblocktrans %} {{ url }}
+{% blocktrans %}Opis:{% endblocktrans %} {{ notes }}
+{% blocktrans %}Używane zbiory:{% endblocktrans %}
+{{ datasets }}

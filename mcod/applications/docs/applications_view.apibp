@@ -1,0 +1,11 @@
+### Wyszukiwarka aplikacji [GET]
+Wyszukuje aplikacje zgodnie z parametrami w query
+*{{ GET.xxxx }}*
+
++ Parameters
+    + q (string) - Szukany string
+
++ Response 200 (application/json)
+    {
+        "id":1
+    }

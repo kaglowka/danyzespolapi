@@ -1,0 +1,12 @@
+flake8
+coverage
+pytest
+tox
+pytest-django
+pytest-ordering
+pytest-mock
+namedlist
+beautifulsoup4==4.6.0
+bs4==0.0.1
+
+

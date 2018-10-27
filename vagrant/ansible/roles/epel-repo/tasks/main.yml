@@ -1,0 +1,34 @@
+---
+#- name: print gitlab credentials
+#  when: gitlab
+#  debug:
+#    msg: "Gitlab token: {{ gitlab_user }} - {{gitlab_password}}"
+#
+#- name: print supervisor autostart
+#  when: supervisor_autostart!=None
+#  debug:
+#    msg: "Value {{ supervisor_autostart }}"
+
+- name: check if EPEL repo is configured
+  become: yes
+  stat: path={{ epel_repofile_path }}
+  register: epel_repofile_result
+
+- name: install EPEL repo
+  become: yes
+  yum:
+    name: "{{ epel_repo_url }}"
+    state: present
+  register: result
+  until: '"failed" not in result'
+  retries: 5
+  delay: 10
+  when: not epel_repofile_result.stat.exists
+
+- name: import EPEL GPG key
+  become: yes
+  rpm_key:
+    key: "{{ epel_repo_gpg_key_url }}"
+    state: present
+  when: not epel_repofile_result.stat.exists
+  #ignore_errors: yes

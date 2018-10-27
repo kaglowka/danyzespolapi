@@ -1,0 +1,5 @@
+- name: add Ulyaoth Lab repository
+  become: yes
+  yum:
+    name: https://downloads.ulyaoth.net/rpm/ulyaoth-latest.centos.x86_64.rpm
+    state: installed
