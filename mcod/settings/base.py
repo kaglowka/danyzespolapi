@@ -15,7 +15,7 @@ LOGS_DIR = str(ROOT_DIR.path('logs'))
 
 DATABASE_DIR = str(ROOT_DIR.path('database'))
 
-DEBUG = False
+DEBUG = True
 
 SECRET_KEY = 'xb2rTZ57yOY9iCdqR7W+UAWnU'
 

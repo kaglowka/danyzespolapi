@@ -18,7 +18,8 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
 
-from mcod.datasets.views import DatasetAutocomplete
+from mcod.datasets.views import DatasetAutocomplete, getResource, getChartData
+
 from mcod.organizations.views import OrganizationAutocomplete
 
 admin.site.site_header = "Otwarte Dane"
@@ -30,6 +31,8 @@ urlpatterns = [
     path('nested_admin/', include('nested_admin.urls')),
     path('ckeditor/', include('ckeditor_uploader.urls')),
 
+    path('getResource/<int:id>/', getResource),
+    path('getChartData/<int:id>/', getChartData),
 ]
 
 urlpatterns += (

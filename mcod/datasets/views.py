@@ -99,3 +99,47 @@ class ReportCommentsView(CreateView):
         def _data(self, request, cleaned, *args, **kwargs):
             send_dataset_comment.delay(cleaned['dataset'].id, cleaned['comment'])
             return {}
+
+
+from django.http import HttpResponse
+import json
+
+
+def getResource(request, id):
+
+
+
+    return HttpResponse(json.dumps({
+        'columns': [
+            {
+                'header': 'kategoria pierwsza',
+                'type': 'string',
+                'unique': 7,
+                'rangeFrom': 'Aaron',
+                'rangeTo': 'Żaneta',
+            },
+            {
+                'header': 'kategoria druga',
+                'type': 'number',
+                'unique': 500,
+                'rangeFrom': 15,
+                'rangeTo': 150,
+            },
+
+        ]
+
+    }))
+
+
+def getChartData(request, id):
+    type = request.GET.get('type')
+    x = request.GET['x']
+    y = request.GET.get('y')
+    operation = request.GET.get('operation')
+    filter = request.GET.get('filter')
+
+    return HttpResponse(json.dumps({
+            'x': ['kategoria pierwsza', 'kategoria druga'],
+            'y': [10, 20]
+        }
+    ))
