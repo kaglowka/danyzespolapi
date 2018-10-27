@@ -5,6 +5,7 @@ from dal import autocomplete
 from django.apps import apps
 from elasticsearch_dsl import Q
 
+from mcod import settings
 from mcod.datasets.documents import DatasetsDoc
 from mcod.datasets.models import Dataset, STATUS_CHOICES
 from mcod.datasets.schemas import DatasetsList, ReportCommentsSchema
@@ -108,7 +109,9 @@ from mcod.datasets.visualizations import *
 
 
 def getResource(request, id):
-    filename = 'postepowaniawszczete-zabojstwo.csv'
+    import os
+    filename = 'mock_data/postepowaniawszczete-zabojstwo.csv'
+    filename = os.path.join(settings.STATIC_ROOT, filename)
 
     df = pd.read_csv(filename, encoding='iso-8859-2', delimiter=';')
     summary = analyze_df(df)

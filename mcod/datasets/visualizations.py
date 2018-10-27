@@ -1,14 +1,16 @@
 def analyze_col(col):
     name = col.name
 
+    min_val = col.min()
+    max_val = col.max()
+
     col_type = 'tekst'
     if col.dtype in (int, float):
         col_type = 'liczba'
+        min_val = int(min_val)
+        max_val = int(max_val)
 
     num_uniques = col.unique().size
-
-    min_val = col.min()
-    max_val = col.max()
 
     summary = {
         'header': name,
