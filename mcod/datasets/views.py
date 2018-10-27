@@ -16,6 +16,7 @@ from mcod.lib.handlers import SearchHandler, RetrieveOneHandler, CreateHandler
 from mcod.lib.triggers import LoginOptional
 from mcod.lib.views import SearchView, RetrieveOneView, CreateView
 from mcod.resources.documents import ResourceDoc
+from mcod.resources.models import Resource
 from mcod.resources.schemas import ResourcesList
 from mcod.resources.serializers import ResourceSerializer, ResourcesMeta
 
@@ -106,12 +107,13 @@ from django.http import HttpResponse
 import json
 import pandas as pd
 from mcod.datasets.visualizations import *
+import os
 
 
 def getResource(request, id):
-    import os
-    filename = 'mock_data/postepowaniawszczete-zabojstwo.csv'
-    filename = os.path.join(settings.STATIC_ROOT, filename)
+    resource = Resource.objects.get(pk=id)
+    filename = resource.file.name
+    filename = os.path.join('test-data/media/resources', filename)
 
     df = pd.read_csv(filename, encoding='iso-8859-2', delimiter=';')
     summary = analyze_df(df)
