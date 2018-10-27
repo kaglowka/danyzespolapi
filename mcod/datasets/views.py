@@ -56,9 +56,9 @@ class DatasetResourcesView(SearchView):
             qs = super()._queryset(cleaned, *args, **kwargs)
             if 'id' in kwargs:
                 qs = qs.query(
-                         "nested", path="dataset",
-                         query=Q("term", **{'dataset.id': kwargs['id']})
-                     ).filter('match', status='published')
+                    "nested", path="dataset",
+                    query=Q("term", **{'dataset.id': kwargs['id']})
+                ).filter('match', status='published')
             return qs
 
 
@@ -103,31 +103,18 @@ class ReportCommentsView(CreateView):
 
 from django.http import HttpResponse
 import json
+import pandas as pd
+from mcod.datasets.visualizations import *
 
 
 def getResource(request, id):
+    filename = 'postepowaniawszczete-zabojstwo.csv'
 
-
+    df = pd.read_csv(filename, encoding='iso-8859-2', delimiter=';')
+    summary = analyze_df(df)
 
     return HttpResponse(json.dumps({
-        'columns': [
-            {
-                'header': 'kategoria pierwsza',
-                'type': 'string',
-                'unique': 7,
-                'rangeFrom': 'Aaron',
-                'rangeTo': 'Żaneta',
-            },
-            {
-                'header': 'kategoria druga',
-                'type': 'number',
-                'unique': 500,
-                'rangeFrom': 15,
-                'rangeTo': 150,
-            },
-
-        ]
-
+        'columns': summary
     }))
 
 
@@ -139,7 +126,7 @@ def getChartData(request, id):
     filter = request.GET.get('filter')
 
     return HttpResponse(json.dumps({
-            'x': ['kategoria pierwsza', 'kategoria druga'],
-            'y': [10, 20]
-        }
+        'x': ['kategoria pierwsza', 'kategoria druga'],
+        'y': [10, 20]
+    }
     ))
