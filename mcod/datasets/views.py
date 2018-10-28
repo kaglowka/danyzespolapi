@@ -11,6 +11,7 @@ from mcod.datasets.models import Dataset, STATUS_CHOICES
 from mcod.datasets.schemas import DatasetsList, ReportCommentsSchema
 from mcod.datasets.serializers import DatasetSerializer, DatasetsMeta, ReportCommentResponseSerializer
 from mcod.datasets.tasks import send_dataset_comment
+from mcod.datasets.utils import detect_delimiter
 from mcod.following.handlers import RetrieveOneFollowHandler, FollowingSearchHandler
 from mcod.lib.handlers import SearchHandler, RetrieveOneHandler, CreateHandler
 from mcod.lib.triggers import LoginOptional
@@ -108,14 +109,17 @@ import json
 import pandas as pd
 from mcod.datasets.visualizations import *
 import os
+from django.shortcuts import get_object_or_404
 
 
 def getResource(request, id):
-    resource = Resource.objects.get(pk=id)
+    resource = get_object_or_404(Resource, pk=id)
     filename = resource.file.name
     filename = os.path.join('test-data/media/resources', filename)
 
-    df = pd.read_csv(filename, encoding='iso-8859-2', delimiter=';')
+    delim = detect_delimiter(filename)
+
+    df = pd.read_csv(filename, encoding='iso-8859-2', delimiter=delim)
     summary = analyze_df(df)
 
     return HttpResponse(json.dumps({
