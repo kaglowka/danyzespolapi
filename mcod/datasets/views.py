@@ -121,14 +121,20 @@ def getResource(request, id):
 
 
 def getChartData(request, id):
-    type = request.GET.get('type')
-    x = request.GET['x']
-    y = request.GET.get('y')
-    operation = request.GET.get('operation')
-    filter = request.GET.get('filter')
+    filename = get_csv_path_by_resource(id)
+    df = load_df_from_csv(filename)
+
+    params = {
+        'type': request.GET.get('type'),
+        'x': request.GET['x'],
+        'y': request.GET.get('y'),
+        'operation': request.GET.get('operation'),
+        'filter': request.GET.get('filter', ''),
+    }
+    x, y = filter_df(df=df, params=params)
 
     return HttpResponse(json.dumps({
-        'x': ['kategoria pierwsza', 'kategoria druga'],
-        'y': [10, 20]
+        'x': x,
+        'y': y,
     }
     ))

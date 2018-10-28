@@ -54,8 +54,8 @@ def translate_comparison(comp_str_frontend):
 def filter_df(df, params):
     # parse params
     x_name = params['x']
-    y_name = params['y?']
-    aggr_operation = params['operation?']
+    y_name = params['y']
+    aggr_operation = params['operation']
     filter_str = params['filter']
 
     # parse and construct filter strings
@@ -87,7 +87,9 @@ def filter_df(df, params):
             x = df.index.values
             y = df.values
     else:
-        x = df[x_name].values
-        y = df[y_name].values
+        # default aggregation - SUM
+        df = df.groupby(x_name)[y_name].agg('sum')
+        x = df.index.values
+        y = df.values
 
-    return x, y
+    return x.tolist(), y.tolist()
