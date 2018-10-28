@@ -7,8 +7,10 @@ def analyze_col(col):
     col_type = 'tekst'
     if col.dtype in (int, float):
         col_type = 'liczba'
-        min_val = int(min_val)
-        max_val = int(max_val)
+
+        cast_to = int if col.dtype == int else float
+        min_val = cast_to(min_val)
+        max_val = cast_to(max_val)
 
     num_uniques = col.unique().size
 
@@ -31,3 +33,4 @@ def analyze_df(df):
         summaries.append(col_summ)
 
     return summaries
+
