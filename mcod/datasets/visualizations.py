@@ -7,9 +7,9 @@ def analyze_col(col):
     min_val = col.min()
     max_val = col.max()
 
-    col_type = 'tekst'
+    col_type = 'string'
     if col.dtype in (int, float):
-        col_type = 'liczba'
+        col_type = 'number'
 
         cast_to = int if col.dtype == int else float
         min_val = cast_to(min_val)
