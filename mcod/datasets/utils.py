@@ -26,6 +26,6 @@ def get_csv_path_by_resource(resource_id):
 
 def load_df_from_csv(filename):
     delim = detect_delimiter(filename)
-    df = pd.read_csv(filename, encoding='iso-8859-2', delimiter=delim)
+    df = pd.read_csv(filename, encoding='utf-8', delimiter=delim, keep_default_na=False)
 
     return df
