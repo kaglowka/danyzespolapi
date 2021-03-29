@@ -49,7 +49,7 @@ dal_admin_filters==0.2.2
 django-celery-results==1.0.1
 django-celery-beat==1.1.1
 deepdiff==3.3.0
-pygments==2.2.0
+pygments==2.7.4
 markdown2==2.3.5
 passlib==1.7.1
 sphinx==1.8.1
