@@ -1,5 +1,5 @@
 wheel==0.31.1
-ipython==6.4.0
+ipython==7.16.3
 lxml==4.2.1
 html5lib==1.0.1
 urllib3<1.23
