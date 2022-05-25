@@ -18,7 +18,7 @@ flatdict==3.0.0
 marshmallow==2.15.0
 marshmallow-jsonapi==0.18.0
 webargs==3.0.0
-pyjwt==1.6.4
+pyjwt==2.4.0
 fleep==1.0.1
 python-magic==0.4.15
 argon2-cffi==18.1.0
